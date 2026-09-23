@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Radar — Descodifica a Pressão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0F1117;--surface:#1A1D27;--surface2:#22263A;--pink:#FF4D6D;--pink-dim:#3D1A24;--cyan:#00E5C3;--cyan-dim:#003D35;--purple:#9B72FF;--text:#F0EEF6;--text-muted:#8A8FA8;--border:#2E3250;--correct:#00E5C3;--correct-bg:#003D35;--wrong:#FF4D6D;--wrong-bg:#3D1A24;--warn:#F59E0B;--warn-bg:#2D1F00}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden;position:relative}
+        body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(120px);opacity:.18;pointer-events:none;z-index:0}
+        body::before{width:500px;height:500px;background:var(--pink);top:-150px;right:-100px}
+        body::after{width:400px;height:400px;background:var(--purple);bottom:-100px;left:-80px}
+        .wrap{width:100%;max-width:680px;position:relative;z-index:1}
+        /* START */
+        .start-screen{background:var(--surface);border-radius:28px;padding:28px 44px;text-align:center;border:1px solid var(--border);overflow:hidden;position:relative}
+        .start-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,77,109,.06) 0%,transparent 60%);pointer-events:none}
+        .radar-icon{font-size:80px;display:block;margin-bottom:8px;animation:pulse-icon 2.5s ease-in-out infinite}
+        @keyframes pulse-icon{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+        .tag{display:inline-block;background:var(--pink-dim);color:var(--pink);font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 16px;border-radius:99px;margin-bottom:12px;border:1px solid rgba(255,77,109,.3)}
+        .start-screen h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(20px,5vw,34px);font-weight:700;line-height:1.15;white-space:nowrap;margin-bottom:10px;background:linear-gradient(135deg,#fff 30%,var(--pink) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .start-screen p{font-size:15px;line-height:1.65;color:var(--text-muted);max-width:420px;margin:0 auto 20px}
+        .levels-row{display:flex;justify-content:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+        .level-pill{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text-muted)}
+        .level-pill span{display:block;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--pink);margin-bottom:1px}
+        /* QUIZ */
+        .quiz-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+        .quiz-brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--text-muted)}
+        .quiz-brand em{color:var(--pink);font-style:normal}
+        .q-badge{background:var(--surface2);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-muted)}
+        .progress-track{width:100%;height:4px;background:var(--border);border-radius:99px;margin-bottom:16px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--pink),var(--purple));border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1);width:0%}
+        .chat-bubble-wrap{display:flex;align-items:flex-end;gap:10px;margin-bottom:14px}
+        .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--purple));flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:4px}
+        .chat-bubble{background:var(--surface2);border:2px solid var(--pink);border-radius:18px 18px 18px 4px;padding:14px 18px;font-size:15px;line-height:1.6;color:var(--text);flex:1;box-shadow:0 0 18px rgba(255,77,109,.15)}
+        .bubble-label{font-size:12px;font-weight:700;color:var(--pink);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+        .question-label{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+        .multi-hint{font-size:12px;color:var(--text-muted);margin-bottom:10px}
+        .multi-hint em{color:var(--purple);font-style:normal;font-weight:600}
+        /* OPTIONS — multi-select */
+        .options{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+        .opt-btn{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:10px 16px;text-align:left;font-size:15px;font-family:'Space Grotesk',sans-serif;font-weight:500;cursor:pointer;color:var(--text);transition:border-color .15s,background .15s,transform .12s;display:flex;align-items:center;gap:12px;user-select:none}
+        .opt-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s;font-size:12px;color:transparent}
+        .opt-btn.selected{border-color:var(--purple);background:rgba(155,114,255,.1)}
+        .opt-btn.selected .opt-check{background:var(--purple);border-color:var(--purple);color:#fff}
+        .opt-btn[disabled]{cursor:default}
+        .opt-btn.correct{border-color:var(--correct);background:var(--correct-bg)}
+        .opt-btn.correct .opt-check{background:var(--correct);border-color:var(--correct);color:#000}
+        .opt-btn.incorrect{border-color:var(--wrong);background:var(--wrong-bg)}
+        .opt-btn.incorrect .opt-check{background:var(--wrong);border-color:var(--wrong);color:#fff}
+        .opt-btn.missed{border-color:var(--warn);background:var(--warn-bg)}
+        .opt-btn.missed .opt-check{background:var(--warn);border-color:var(--warn);color:#000}
+        /* FEEDBACK */
+        .feedback{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:20px;display:none;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+        @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .fb-header{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;margin-bottom:10px}
+        .fb-header.ok{color:var(--cyan)}
+        .fb-header.ko{color:var(--pink)}
+        .fb-header.warn{color:var(--warn)}
+        .fb-text{font-size:14px;line-height:1.65;color:var(--text-muted);margin-bottom:14px}
+        .shield-box{background:linear-gradient(135deg,rgba(155,114,255,.2),rgba(0,229,195,.15));border:2px solid rgba(155,114,255,.5);border-radius:12px;padding:16px 20px;font-size:15px;font-weight:700;color:#c4b5fd;line-height:1.6}
+        /* CONTROLS */
+        .controls{display:flex;justify-content:space-between;align-items:center;gap:12px}
+        .btn{background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;border:none;border-radius:14px;padding:14px 32px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .12s}
+        .btn:hover{opacity:.88;transform:translateY(-2px)}.btn:active{transform:translateY(0)}
+        .btn:disabled{opacity:.4;cursor:default;transform:none}
+        .btn-back{background:transparent;color:var(--text-muted);border:1.5px solid var(--border)}
+        .btn-back:hover{background:var(--surface2);color:var(--text);opacity:1}
+        .btn-confirm{background:linear-gradient(135deg,var(--pink),var(--purple))}
+        .q-anim{animation:qIn .3s cubic-bezier(.4,0,.2,1)}
+        @keyframes qIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        /* RESULTS */
+        .results-screen{background:var(--surface);border-radius:28px;padding:52px 44px;text-align:center;border:1px solid var(--border);position:relative;overflow:hidden}
+        .results-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(155,114,255,.07) 0%,transparent 70%);pointer-events:none}
+        .results-icon{font-size:64px;display:block;margin-bottom:12px}
+        .results-screen h2{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:32px}
+        .score-ring{width:150px;height:150px;border-radius:50%;background:conic-gradient(var(--pink) 0%,var(--purple) 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 32px}
+        .score-ring-inner{width:120px;height:120px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center}
+        .score-n{font-family:'Space Grotesk',sans-serif;font-size:44px;font-weight:700;line-height:1}
+        .score-d{font-size:13px;color:var(--text-muted);margin-top:4px}
+        .rank-title{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:12px}
+        .rank-desc{font-size:15px;line-height:1.65;color:var(--text-muted);max-width:420px;margin:0 auto 20px}
+        .families-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px}
+        .fam-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-muted)}
+        .fam-chip.ok{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)}
+        .fam-chip.ko{border-color:var(--pink);color:var(--pink);background:var(--pink-dim)}
+        @media(max-width:540px){.start-screen,.results-screen{padding:36px 24px}}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <!-- IDENTIFICAÇÃO -->
+    <div id="identificacao">
+        <div class="start-screen">
+            <span class="radar-icon">&#x1F4E1;</span>
+            <div class="tag">ON-RE@L &middot; A Cena do Ch&#225;</div>
+            <h1>Descodifica a Press&#227;o</h1>
+            <p style="margin-bottom:28px">Antes de come&#231;ares, diz-nos a escola e a turma.</p>
+            <div style="display:flex;flex-direction:column;gap:14px;max-width:340px;margin:0 auto 28px">
+                <select id="inp-agrupamento" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;font-size:16px;color:var(--text);font-family:'Space Grotesk',sans-serif;outline:none;width:100%">
+                  <option value="">Seleccionar agrupamento...</option>
+                  <option value="EB JOÃO VILLARET">EB JOÃO VILLARET</option>
+<option value="EB 4 OUTUBRO">EB 4 OUTUBRO</option>
+<option value="AE JOSÉ AFONSO">AE JOSÉ AFONSO</option>
+<option value="AE HUMBERTO DELGADO">AE HUMBERTO DELGADO</option>
+<option value="EB LUIS STTAU MONTEIRO">EB LUIS STTAU MONTEIRO</option>
+<option value="IPTRANS">IPTRANS</option>
+<option value="Outro">Outro</option>
+                </select>
+                <input id="inp-escola" type="text" placeholder="Escola" autocomplete="off"
+                    style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;font-size:16px;color:var(--text);font-family:'Space Grotesk',sans-serif;outline:none;width:100%">
+                <input id="inp-turma" type="text" placeholder="Turma (ex: 6A)" autocomplete="off"
+                    style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;font-size:16px;color:var(--text);font-family:'Space Grotesk',sans-serif;outline:none;width:100%">
+                <div id="aviso-coletivo" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--text-muted);text-align:center">&#x1F465; Modo coletivo &#8212; resultado registado como atividade da turma</div>
+                <input type="number" id="inp-nalunos" placeholder="N.º de alunos presentes" min="1" max="40" inputmode="numeric" style="display:none;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;font-size:16px;color:var(--text);font-family:'Space Grotesk',sans-serif;outline:none;width:100%">
+                <div id="inp-erro" style="color:var(--pink);font-size:13px;display:none">Preenche a escola e a turma para continuar.</div>
+            </div>
+            <button class="btn" onclick="confirmarIdentidade()">&#x1F4E1; Ligar o Radar</button>
+        </div>
+    </div>
+
+    <!-- START -->
+    <div id="start" style="display:none">
+        <div class="start-screen">
+            <span class="radar-icon">&#x1F4E1;</span>
+            <div class="tag">ON-RE@L &middot; A Cena do Ch&#225;</div>
+            <h1>Descodifica a Press&#227;o</h1>
+            <p>Consegues identificar o que est&#225; mesmo a acontecer quando algu&#233;m tenta pressionar-te? Algumas falas t&#234;m mais do que uma manobra. Ativa o teu radar.</p>
+            <div class="levels-row">
+                <div class="level-pill"><span>21</span>Perguntas</div>
+                <div class="level-pill"><span>12</span>Fam&#237;lias</div>
+                <div class="level-pill"><span>5</span>Grooming</div>
+            </div>
+            <button class="btn" onclick="startQuiz()">&#x1F4E1; Ligar o Radar</button>
+        </div>
+    </div>
+    <!-- QUIZ -->
+    <div id="quiz" style="display:none;">
+        <div class="quiz-top">
+            <div class="quiz-brand">Quiz <em>Radar</em></div>
+            <div class="q-badge" id="q-count">1 / 17</div>
+            <button class="btn btn-back" id="btn-terminar" onclick="terminarAntes()" style="padding:6px 12px;font-size:12px;width:auto">&#9209;&#65039; Terminar</button>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div id="q-anim-wrap">
+            <div class="chat-bubble-wrap">
+                <div class="avatar">&#x1F464;</div>
+                <div class="chat-bubble">
+                    <div class="bubble-label">Di&#225;logo</div>
+                    <span id="quote-text" style="font-style:italic;font-weight:500"></span>
+                </div>
+            </div>
+            <div class="question-label" id="question-label"></div>
+            <div class="multi-hint" id="multi-hint"></div>
+            <div class="options" id="options"></div>
+        </div>
+        <div class="feedback" id="feedback">
+            <div class="fb-header" id="fb-status"></div>
+            <div class="fb-text" id="fb-text"></div>
+            <div class="shield-box" id="fb-shield"></div>
+        </div>
+        <div class="controls">
+            <button class="btn btn-back" id="back-btn" onclick="prevQuestion()" style="display:none;">&#8592; Recuar</button>
+            <div style="display:flex;gap:10px">
+                <button class="btn btn-confirm" id="confirm-btn" onclick="confirmarResposta()" disabled>Confirmar</button>
+                <button class="btn" id="next-btn" onclick="nextQuestion()" style="display:none;">Pr&#243;xima &#8594;</button>
+            </div>
+        </div>
+    </div>
+    <!-- RESULTS -->
+    <div id="results" style="display:none;">
+        <div class="results-screen">
+            <span class="results-icon">&#x1F3C6;</span>
+            <h2>Resultado do Teu Radar</h2>
+            <div class="score-ring"><div class="score-ring-inner">
+                <span class="score-n" id="score-n">0</span>
+                <span class="score-d" id="score-d">de 21</span>
+            </div></div>
+            <div class="rank-title" id="rank-title"></div>
+            <p class="rank-desc" id="rank-desc"></p>
+            <div class="families-grid" id="families-grid"></div>
+            <div id="envio-box" style="margin:18px auto;max-width:520px;text-align:center">
+                <button class="btn" id="btn-enviar" onclick="enviarPendente()" style="display:none;background:linear-gradient(135deg,#2e7d32,#1b5e20)">&#x1F4E4; Enviar dados</button>
+                <p id="envio-msg" style="margin-top:10px;font-size:14px;font-weight:700"></p>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+                <button class="btn" onclick="exportarMeuCSV()" style="background:linear-gradient(135deg,var(--cyan),var(--purple))">&#x2B07; Exportar o meu resultado</button>
+                <button class="btn" onclick="resetQuiz()">&#x1F504; Jogar outra vez</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// correct: array of indices that are correct answers (can be multiple)
+var Q=[
+  // Ordem: primeiro as manobras do filme (grooming), para ficarem registadas mesmo que a sessão seja interrompida
+  {f:"Grooming",
+    q:"\u201cNunca conheci ningu\u00e9m t\u00e3o especial como tu. Somos almas g\u00e9meas, tenho a certeza. Olha o que te trouxe \u2014 gastei tudo o que tinha para te comprar este presente. Agora bebe s\u00f3 um bocadinho, n\u00e3o custa nada!\u201d",
+    qt:"Que t\u00e1ticas de grooming est\u00e3o presentes?",
+    o:["Lovebombing (bomba de amor) / elogio estratégico","Cria\u00e7\u00e3o de d\u00edvida / presente n\u00e3o pedido","Minimiza\u00e7\u00e3o","Gaslighting","Não identifico nenhuma manobra de pressão"],
+    c:[0,1,2],
+    e:"Lovebombing/elogio estrat\\u00e9gico: elogios e afeto excessivos e muito r\u00e1pidos para criar uma depend\u00eancia emocional (\u2018alma g\u00e9mea\u2019, \u2018nunca conheci ningu\u00e9m assim\u2019). A intensidade desproporcionada \u00e9 o sinal de alerta. Cria\u00e7\u00e3o de d\u00edvida: um presente n\u00e3o pedido que gera a sensa\u00e7\u00e3o de que existe uma d\u00edvida moral a pagar em troca.",
+    sh:"\ud83d\udee1\ufe0f \u201cElogios e presentes n\u00e3o me obrigam a nada. Afeto verdadeiro n\u00e3o tem pressa nem exig\u00eancia.\u201d"},
+  {f:"Grooming",
+    q:"\u201cEst\u00e1s completamente louca, eu nunca disse isso! A tua mem\u00f3ria \u00e9 p\u00e9ssima. E se n\u00e3o tivesses agido assim, eu n\u00e3o me teria descontrolado \u2014 a culpa \u00e9 tua.\u201d",
+    qt:"Que t\u00e1ticas de grooming est\u00e3o presentes?",
+    o:["Ataque de car\u00e1ter","Lovebombing (bomba de amor) / elogio estratégico","Gaslighting","Invers\u00e3o da culpa","Não identifico nenhuma manobra de pressão"],
+    c:[2,3],
+    e:"Gaslighting: negar sistematicamente a realidade e a mem\u00f3ria da v\u00edtima (\u2018nunca disse isso\u2019, \u2018mem\u00f3ria p\u00e9ssima\u2019) at\u00e9 ela perder a confian\u00e7a em si mesma e ficar dependente e isolada. Invers\u00e3o da culpa: transferir a responsabilidade total pelo comportamento abusivo para a pr\u00f3pria v\u00edtima (\u2018a culpa \u00e9 tua\u2019), impedindo-a de reconhecer o abuso e pedir ajuda.",
+    sh:"\ud83d\udee1\ufe0f \u201cEu sei o que aconteceu. Est\u00e1s a tentar responsabilizar-me pelo teu comportamento. Vou falar com algu\u00e9m de confian\u00e7a.\u201d"
+  },
+  {f:"Coa\u00e7\u00e3o / amea\u00e7a / intimida\u00e7\u00e3o",
+    q:"\u201cOu bebes agora mesmo, ou amanh\u00e3 toda a escola saber\u00e1 o teu segredo. A tua casmurrice est\u00e1 a deixar-me alterado \u2014 n\u00e3o me responsabilizo.\u201d",
+    qt:"Que manobras de coa\u00e7\u00e3o est\u00e3o presentes?",
+    o:["Chantagem","Amea\u00e7a de rea\u00e7\u00e3o emocional","Ataque de car\u00e1ter","Minimiza\u00e7\u00e3o","Não identifico nenhuma manobra de pressão"],
+    c:[0,1,2],
+    e:"Chantagem: condicionar atrav\u00e9s de uma exig\u00eancia com consequ\u00eancia (\u2018ou bebes ou toda a escola saber\u00e1 o teu segredo\u2019). Amea\u00e7a de rea\u00e7\u00e3o emocional: usar a pr\u00f3pria emo\u00e7\u00e3o do agressor como press\u00e3o (\u2018est\u00e1 a deixar-me alterado, n\u00e3o me responsabilizo\u2019). Ataque de car\u00e1ter: chamar \u2018casmurrice\u2019 \u00e0 recusa atribui um tra\u00e7o de personalidade negativo \u00e0 pessoa por estar a recusar \u2014 como se recusar fosse um defeito de car\u00e1ter e n\u00e3o uma escolha leg\u00edtima.",
+    sh:"\ud83d\udee1\ufe0f \u201cIsso \u00e9 uma amea\u00e7a. A conversa termina aqui e vou falar com um adulto.\u201d"},
+  {f:"Sem press\u00e3o",q:"\u201cN\u00e3o queres? Tudo bem, n\u00e3o faz mal. Fica aqui se mudares de ideias.\u201d",qt:"Que manobras est\u00e3o presentes nesta fala?",o:["Desvio da recusa","Insist\u00eancia","Uso da rela\u00e7\u00e3o / v\u00ednculo","Minimiza\u00e7\u00e3o","N\u00e3o identifico nenhuma manobra de press\u00e3o"],c:[4],e:"Correto. Aqui n\u00e3o h\u00e1 press\u00e3o.",sh:"\ud83d\udee1\ufe0f Aceitar o n\u00e3o sem condi\u00e7\u00e3o \u00e9 o oposto da press\u00e3o. Esta \u00e9 a resposta assertiva que os escudos promovem."},
+  {f:"Insist\u00eancia / tempo",
+    q:"\u201cAnda l\u00e1! Anda l\u00e1! Decide-te j\u00e1, que o ch\u00e1 est\u00e1 a arrefecer e eu tenho de sair!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Exig\u00eancia de justifica\u00e7\u00e3o","Insist\u00eancia","Coa\u00e7\u00e3o","Urg\u00eancia / pressa","Não identifico nenhuma manobra de pressão"],
+    c:[1,3],
+    e:"\u2018Anda l\u00e1, anda l\u00e1\u2019 \u00e9 Insist\u00eancia: repetir o pedido sem aceitar o n\u00e3o. \u2018O ch\u00e1 est\u00e1 a arrefecer, tenho de sair\u2019 \u00e9 Urg\u00eancia/pressa: comprimir o tempo para reduzir a possibilidade de pensar e recusar. S\u00e3o duas sub-categorias distintas dentro da mesma fam\u00edlia.",
+    sh:"\ud83d\udee1\ufe0f \u201cA tua insist\u00eancia apressada n\u00e3o me deixa decidir com calma. N\u00e3o decido nada \u00e0 pressa.\u201d"},
+  {
+    f:"Minimiza\u00e7\u00e3o",
+    q:"\u201cBebe s\u00f3 um bocadinho, n\u00e3o te vai fazer mal. O mal-estar que tiveste da outra vez j\u00e1 passou, n\u00e3o tem nada a ver com isto.\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Sobrevaloriza\u00e7\u00e3o do objeto","Minimiza\u00e7\u00e3o por quantidade","Legitima\u00e7\u00e3o por fonte externa","Invalida\u00e7\u00e3o da experi\u00eancia passada","Não identifico nenhuma manobra de pressão"],
+    c:[1,3],
+    e:"\u2018Bebe s\u00f3 um bocadinho, n\u00e3o te vai fazer mal\u2019 \u00e9 Minimiza\u00e7\u00e3o por quantidade: reduz o pedido a algo t\u00e3o pequeno que recusar parece exagero, como se a quantidade fosse o que est\u00e1 realmente em causa. \u2018O mal-estar que tiveste da outra vez j\u00e1 passou\u2019 \u00e9 Invalida\u00e7\u00e3o da experi\u00eancia passada: desvaloriza uma raz\u00e3o real e leg\u00edtima de recusa, como se a mem\u00f3ria da outra pessoa n\u00e3o contasse.",
+    sh:"\ud83d\udee1\ufe0f \u201cN\u00e3o interessa se \u00e9 pouco ou muito, interessa que a minha escolha seja respeitada e o que passei tamb\u00e9m.\u201d"},
+  {f:"Uso da rela\u00e7\u00e3o / v\u00ednculo",
+    q:"\u201cOlha o esfor\u00e7o que ele fez por ti, preparou tudo com tanto carinho. N\u00e3o confias nele?\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Cria\u00e7\u00e3o de d\u00edvida","Apelo \u00e0 confian\u00e7a","Sobrevaloriza\u00e7\u00e3o do objeto","Invoca\u00e7\u00e3o do sacrif\u00edcio","Não identifico nenhuma manobra de pressão"],
+    c:[1,3],
+    e:"Invoca\u00e7\u00e3o do sacrif\u00edcio: destacar o esfor\u00e7o e o carinho para criar um sentimento de obriga\u00e7\u00e3o moral (\u2018ele fez tanto por ti\u2019). Apelo \u00e0 confian\u00e7a: usar a confian\u00e7a interpessoal como alavanca de press\u00e3o (\u2018n\u00e3o confias nele?\u2019). As duas usam a rela\u00e7\u00e3o como instrumento.",
+    sh:"\ud83d\udee1\ufe0f \u201cAgrade\u00e7o o esfor\u00e7o, mas o que fazes pelos outros n\u00e3o deve ser usado para pressionar a fazer algo que n\u00e3o querem.\u201d"},
+  {f:"Insist\u00eancia / tempo",
+    q:"\u201cBebe! Bebe! Bebe!\u201d \u2014 e depois vira-se para os colegas: \u201cVamos todos dizer ao mesmo tempo para ele beber!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Exclus\u00e3o social","Press\u00e3o de grupo por conformidade","Insist\u00eancia","Recrutamento do grupo alargado","Não identifico nenhuma manobra de pressão"],
+    c:[2,3],
+    e:"\u2018Bebe, bebe, bebe\u2019 \u00e9 Insist\u00eancia pura: repetir sem aceitar o n\u00e3o. Quando convida os colegas a juntar-se, acrescenta Recrutamento do grupo alargado: um elemento mobiliza ativamente outros para amplificar a press\u00e3o. \u00c9 diferente do grupo agir sozinho.",
+    sh:"\ud83d\udee1\ufe0f \u201cN\u00e3o adianta buscares apoiantes para me pressionar. As minhas escolhas s\u00e3o para mim, n\u00e3o para os outros.\u201d"},
+  {f:"Sem press\u00e3o",q:"\u201cOntem fui ao supermercado e lembrei-me de trazer este ch\u00e1 que gosto muito para provarem.\u201d",qt:"Que manobras est\u00e3o presentes nesta fala?",o:["Sobrevaloriza\u00e7\u00e3o do objeto","Uso da rela\u00e7\u00e3o / v\u00ednculo","Legitima\u00e7\u00e3o por tradi\u00e7\u00e3o","Insist\u00eancia","N\u00e3o identifico nenhuma manobra de press\u00e3o"],c:[4],e:"Correto. Aqui n\u00e3o h\u00e1 press\u00e3o.",sh:"\ud83d\udee1\ufe0f Nem toda a oferta \u00e9 manipula\u00e7\u00e3o. Uma partilha gen\u00faina, sem condi\u00e7\u00e3o nem insist\u00eancia, \u00e9 simplesmente isso \u2014 uma oferta."},
+  {f:"Uso da rela\u00e7\u00e3o / v\u00ednculo",
+    q:"\u201cSe gostas mesmo de mim, bebes. Se n\u00e3o beberes \u00e9 porque afinal n\u00e3o somos assim t\u00e3o amigos.\u201d",
+    qt:"Que manobra est\u00e1 a ser usada?",
+    o:["Exig\u00eancia de justifica\u00e7\u00e3o","Coa\u00e7\u00e3o","Equiparar recusa a desafeto","Exclus\u00e3o social","Não identifico nenhuma manobra de pressão"],
+    c:[2],
+    e:"Equiparar recusa a desafeto: transforma o n\u00e3o numa rejei\u00e7\u00e3o da pr\u00f3pria rela\u00e7\u00e3o. \u2018Se n\u00e3o beberes, \u00e9 porque n\u00e3o somos amigos\u2019 usa o v\u00ednculo afetivo como moeda de press\u00e3o. N\u00e3o h\u00e1 amea\u00e7a nem grupo \u2014 \u00e9 s\u00f3 a rela\u00e7\u00e3o a ser instrumentalizada.",
+    sh:"\ud83d\udee1\ufe0f \u201cGostar de ti e n\u00e3o querer beber s\u00e3o coisas completamente independentes.\u201d"},
+  {f:"Legitima\u00e7\u00e3o",
+    q:"\u201cOuvi dizer que at\u00e9 o Ronaldo bebe este ch\u00e1. E esta receita \u00e9 da minha av\u00f3, h\u00e1 cinquenta anos que toda a gente bebe. Ainda no outro dia li num artigo que faz mesmo bem.\u201d",
+    qt:"Que manobras de legitima\u00e7\u00e3o est\u00e3o presentes?",
+    o:["Sobrevaloriza\u00e7\u00e3o do objeto","Legitima\u00e7\u00e3o por tradi\u00e7\u00e3o","Legitima\u00e7\u00e3o por celebridade","Legitima\u00e7\u00e3o por fonte externa","Não identifico nenhuma manobra de pressão"],
+    c:[1,2,3],
+    e:"S\u00e3o tr\u00eas sub-categorias de Legitima\u00e7\u00e3o: por celebridade/figura simb\u00f3lica (Ronaldo), por tradi\u00e7\u00e3o (receita da av\u00f3, h\u00e1 cinquenta anos), por fonte externa (o artigo). Todas invocam uma autoridade para justificar quem pressiona \u2014 n\u00e3o o ch\u00e1 em si. Sobrevaloriza\u00e7\u00e3o seria exagerar as qualidades do objeto, o que n\u00e3o acontece aqui.",
+    sh:"\ud83d\udee1\ufe0f \u201cEu admiro o Ronaldo no futebol, mas n\u00e3o quer dizer que copie tudo o que ele faz. Nem fa\u00e7o porque se faz h\u00e1 muito tempo. Os artigos tamb\u00e9m podem conter erros e generaliza\u00e7\u00f5es.\u201d"},
+  {f:"Legitima\u00e7\u00e3o",
+    q:"\u201cS\u00f3 podes dizer que n\u00e3o gostas depois de provares. \u00c9 sempre bom experimentar coisas novas \u2014 quem n\u00e3o experimenta n\u00e3o tem raz\u00e3o para recusar.\u201d",
+    qt:"Que manobra est\u00e1 a ser usada?",
+    o:["Desqualifica\u00e7\u00e3o da pessoa","Sobrevaloriza\u00e7\u00e3o do momento","Legitimidade condicionada \u00e0 experi\u00eancia","Exig\u00eancia de justifica\u00e7\u00e3o","Não identifico nenhuma manobra de pressão"],
+    c:[2],
+    e:"Legitimidade condicionada \u00e0 experi\u00eancia: imp\u00f5e experimentar como condi\u00e7\u00e3o para ter direito a recusar (\u2018s\u00f3 podes dizer que n\u00e3o gostas depois de provares\u2019). O n\u00e3o fica inv\u00e1lido sem prova pr\u00e9via. Al\u00e9m disso, nem sempre \u00e9 bom experimentar coisas novas \u2014 h\u00e1 coisas que n\u00e3o vale a pena experimentar, e recusar sem ter provado \u00e9 um direito.",
+    sh:"\ud83d\udee1\ufe0f \u201cN\u00e3o preciso de experimentar para saber que n\u00e3o quero. O n\u00e3o n\u00e3o precisa de prova.\u201d"},
+  {f:"Sem press\u00e3o",q:"\u201cToda a gente est\u00e1 a gostar muito. \u00c9 mesmo bom. Mas se n\u00e3o quiseres, tudo bem.\u201d",qt:"Que manobras est\u00e3o presentes nesta fala?",o:["Press\u00e3o de grupo / conformidade","Sobrevaloriza\u00e7\u00e3o do objeto","Legitima\u00e7\u00e3o por celebridade","Exig\u00eancia de justifica\u00e7\u00e3o","N\u00e3o identifico nenhuma manobra de press\u00e3o"],c:[4],e:"Correto. Aqui n\u00e3o h\u00e1 press\u00e3o.",sh:"\ud83d\udee1\ufe0f Esta fala tem elementos que parecem press\u00e3o \u2014 mas termina com aceita\u00e7\u00e3o genuina da recusa. Sem condi\u00e7\u00e3o, sem insist\u00eancia."},
+  {f:"Sobrevaloriza\u00e7\u00e3o",
+    q:"\u201cEste ch\u00e1 \u00e9 de umas ilhas ex\u00f3ticas, cura tudo. Seria uma pena n\u00e3o provares \u2014 \u00e9 uma oportunidade \u00fanica na vida!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Sobrevaloriza\u00e7\u00e3o do momento","Minimiza\u00e7\u00e3o por quantidade","Sobrevaloriza\u00e7\u00e3o do objeto","Legitima\u00e7\u00e3o por fonte externa","Não identifico nenhuma manobra de pressão"],
+    c:[0,2],
+    e:"Sobrevaloriza\u00e7\u00e3o do objeto: inflar as qualidades do ch\u00e1 (\u2018ilhas ex\u00f3ticas\u2019, \u2018cura tudo\u2019) para que recusar pare\u00e7a um desperd\u00edcio absurdo. Sobrevaloriza\u00e7\u00e3o do momento: o instante \u00e9 apresentado como \u00fanico e irrepet\u00edvel (\u2018oportunidade \u00fanica na vida\u2019), acrescentando urg\u00eancia emocional \u00e0 press\u00e3o.",
+    sh:"\ud83d\udee1\ufe0f \u201cAcredito que pode at\u00e9 ser \u00f3timo para ti, mas eu posso dar um valor diferente. N\u00e3o quero, obrigado. Nem todas as oportunidades \u00fanicas valem a pena.\u201d"},
+  {f:"Press\u00e3o de grupo / conformidade",
+    q:"\u201cEst\u00e1 toda a gente a beber, \u00e9 mesmo tend\u00eancia! Se o teu irm\u00e3o estivesse aqui j\u00e1 tinha bebido. E quem n\u00e3o beber fica de fora.\u201d",
+    qt:"Que manobras de press\u00e3o de grupo est\u00e3o presentes?",
+    o:["Recrutamento do grupo alargado","Conformidade ao popular / moda","Exclus\u00e3o social","Compara\u00e7\u00e3o com pessoa pr\u00f3xima","Não identifico nenhuma manobra de pressão"],
+    c:[1,2,3],
+    e:"Conformidade ao popular/moda: \u2018toda a gente bebe, \u00e9 tend\u00eancia\u2019 usa a multid\u00e3o como argumento. Compara\u00e7\u00e3o com pessoa pr\u00f3xima: o irm\u00e3o \u00e9 usado como refer\u00eancia do c\u00edrculo pr\u00f3ximo. Exclus\u00e3o social: \u2018quem n\u00e3o beber fica de fora\u2019 \u00e9 uma amea\u00e7a expl\u00edcita de afastamento do grupo.",
+    sh:"\ud83d\udee1\ufe0f \u201cEu n\u00e3o preciso de seguir tend\u00eancias nem ningu\u00e9m para decidir por mim. Est\u00e1s a tentar comparar-me e a excluir para eu ceder.\u201d"},
+  {f:"Incentivo / aposta",
+    q:"\u201cSe beberes fa\u00e7o o teu trabalho de Cidadania! Aposto que n\u00e3o consegues beber tudo de uma vez e aguentar o sabor sem fazer careta! Medricas!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Exig\u00eancia de justifica\u00e7\u00e3o","Amea\u00e7a","Incentivo / recompensa","Aposta / desafio","Não identifico nenhuma manobra de pressão"],
+    c:[2,3],
+    e:"Incentivo/recompensa: oferta de um benef\u00edcio direto para induzir a aceita\u00e7\u00e3o (\u2018fa\u00e7o o teu trabalho\u2019). Aposta/desafio ao ego: provocar para levar o outro a agir para provar que \u00e9 capaz (\u2018aposto que n\u00e3o \u00e9s capaz, medricas\u2019). As duas atraem \u2014 uma pelo ganho, outra pelo desafio \u2014 nenhuma amea\u00e7a.",
+    sh:"\ud83d\udee1\ufe0f \u201cN\u00e3o preciso de provar nada a ningu\u00e9m. N\u00e3o aceito a aposta.\u201d"},
+  {f:"Sem press\u00e3o",q:"\u201cComo preferes beber o ch\u00e1?\u201d",qt:"Que manobras est\u00e3o presentes nesta fala?",o:["Desvio da recusa","Exig\u00eancia de justifica\u00e7\u00e3o","Insist\u00eancia","Legitima\u00e7\u00e3o","N\u00e3o identifico nenhuma manobra de press\u00e3o"],c:[4],e:"Correto. Aqui n\u00e3o h\u00e1 press\u00e3o.",sh:"\ud83d\udee1\ufe0f Perguntar como algu\u00e9m prefere algo \u00e9 respeitar a sua prefer\u00eancia \u2014 pressup\u00f5e que j\u00e1 aceitou livremente."},
+  {f:"Distor\u00e7\u00e3o cognitiva",
+    q:"\u201cMas tu disseste ontem que querias provar! Est\u00e1s a inventar desculpas. Al\u00e9m disso n\u00f3s s\u00f3 queremos o teu bem.\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Press\u00e3o com linguagem de ajuda","Desqualifica\u00e7\u00e3o da pessoa","Gaslighting","Invalida\u00e7\u00e3o da experi\u00eancia","Não identifico nenhuma manobra de pressão"],
+    c:[0,2],
+    e:"Gaslighting: negar a percep\u00e7\u00e3o e a mem\u00f3ria da outra pessoa para a fazer duvidar de si pr\u00f3pria (\u2018disseste ontem\u2019, \u2018est\u00e1s a inventar\u2019). Press\u00e3o com linguagem de ajuda: mascarar a press\u00e3o como cuidado genuinamente benigno (\u2018s\u00f3 queremos o teu bem\u2019), tornando-a mais dif\u00edcil de identificar.",
+    sh:"\ud83d\udee1\ufe0f \u201cEu sei o que disse e o que sinto. Cuidar de mim \u00e9 respeitar a minha decis\u00e3o.\u201d"},
+  {f:"Desvio da recusa",
+    q:"\u201cN\u00e3o queres quente? Fa\u00e7o frio. N\u00e3o queres com a\u00e7\u00facar? Tiro o a\u00e7\u00facar. Ou ent\u00e3o joguemos pedra-papel-tesoura \u2014 quem perder bebe!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Incentivo / recompensa","Ajuste da proposta","Insist\u00eancia","Transformar em jogo","Não identifico nenhuma manobra de pressão"],
+    c:[1,3],
+    e:"Ajuste da proposta: modificar continuamente o ch\u00e1 para que fique cada vez mais dif\u00edcil recusar (\u2018ponho gelo\u2019, \u2018tiro o a\u00e7\u00facar\u2019). Transformar em jogo: desviar a decis\u00e3o para um jogo aparentemente neutro onde o acaso decide (pedra-papel-tesoura). As duas contornam o n\u00e3o sem o confrontar.",
+    sh:"\ud83d\udee1\ufe0f \u201cO meu n\u00e3o aplica-se a qualquer vers\u00e3o do ch\u00e1 e a qualquer jogo. Est\u00e1s a tentar distrair-me e a tornar a minha decis\u00e3o numa brincadeira. N\u00e3o quero, obrigado.\u201d"},
+  {f:"Exig\u00eancia de justifica\u00e7\u00e3o",
+    q:"\u201cMas porque \u00e9 que n\u00e3o queres? D\u00e1-me uma boa raz\u00e3o! Est\u00e1s de dieta? N\u00e3o confias em mim? Explica-te!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Desqualifica\u00e7\u00e3o da pessoa","Exig\u00eancia de justifica\u00e7\u00e3o","Gaslighting","Apelo \u00e0 confian\u00e7a","Não identifico nenhuma manobra de pressão"],
+    c:[1,3],
+    e:"Exig\u00eancia de justifica\u00e7\u00e3o: obrigar quem recusa a explicar o n\u00e3o, virando o \u00f3nus da prova para o alvo (\u2018d\u00e1-me uma boa raz\u00e3o\u2019, \u2018explica-te\u2019). Apelo \u00e0 confian\u00e7a: usar a confian\u00e7a interpessoal como press\u00e3o (\u2018n\u00e3o confias em mim?\u2019). As duas juntas criam uma press\u00e3o dupla: tens de justificar E provar que confias.",
+    sh:"\ud83d\udee1\ufe0f \u201cN\u00e3o preciso de me justificar para dizer n\u00e3o. A minha resposta \u00e9 n\u00e3o, e chega. N\u00e3o quer dizer que desconfie de ti.\u201d"},
+  {f:"Desqualifica\u00e7\u00e3o da pessoa",
+    q:"\u201cEst\u00e1s a recusar porque \u00e9s esquisito. Toda a gente sabe que s\u00f3 queres aten\u00e7\u00e3o! \u00c9s um palha\u00e7o!\u201d",
+    qt:"Que manobras est\u00e3o presentes nesta fala?",
+    o:["Exclus\u00e3o social","Gaslighting","Rotulagem","Uso do insulto","Não identifico nenhuma manobra de pressão"],
+    c:[2,3],
+    e:"Rotulagem: atribuir uma caracter\u00edstica negativa para desvalorizar quem recusa (\u2018esquisito\u2019, \u2018s\u00f3 queres aten\u00e7\u00e3o\u2019). Uso do insulto: atacar diretamente o valor da pessoa (\u2018palha\u00e7o!2019). As duas atacam quem a pessoa \u00c9, n\u00e3o a recusa em si.",
+    sh:"\ud83d\udee1\ufe0f \u201cRotulares-me e insultares-me n\u00e3o muda a minha decis\u00e3o. Exijo que me respeites.\u201d"}
+];
+
+// SUPABASE
+var SUPA_URL='https://mpqxovtheecoqbermucw.supabase.co';
+var SUPA_KEY='sb_publishable_KjsZpTVoyV1J5I2371siYg_sSMjRnaQ';
+var alunoTurma='',alunoEscola='',alunoAgrupamento='',alunoNome='';
+// Modo coletivo: só com o link do portal (…/?modo=coletivo). Os alunos usam o link simples.
+var MODO_COLETIVO=new URLSearchParams(location.search).get('modo')==='coletivo';
+document.addEventListener('DOMContentLoaded',function(){
+    if(MODO_COLETIVO){var av=document.getElementById('aviso-coletivo');if(av)av.style.display='block';var na=document.getElementById('inp-nalunos');if(na)na.style.display='block';}
+});
+
+async function guardarResultado(nome,turma,pontuacao,total,respostas,escola,agrupamento,keepalive){
+    // Normalizar
+    agrupamento = (agrupamento||'').toUpperCase().trim();
+    escola = (escola||'').toUpperCase().trim();
+    turma = (turma||'').toUpperCase().trim();
+    nome = (nome||'').toUpperCase().trim();
+    var corpo={nome,turma,pontuacao,total,respostas,escola,agrupamento};
+    if(MODO_COLETIVO){var na=parseInt((document.getElementById('inp-nalunos')||{}).value,10); if(na>0) corpo.n_alunos=na;}
+    var headers={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'};
+    try{
+        var r=await fetch(SUPA_URL+'/rest/v1/quiz_radar',{method:'POST', keepalive:!!keepalive, headers:headers, body:JSON.stringify(corpo)});
+        // Se a coluna n_alunos ainda não existir, envia sem ela — o resultado nunca se perde
+        if(!r.ok && corpo.n_alunos!==undefined){
+            delete corpo.n_alunos;
+            r=await fetch(SUPA_URL+'/rest/v1/quiz_radar',{method:'POST', keepalive:!!keepalive, headers:headers, body:JSON.stringify(corpo)});
+        }
+        return r.ok;
+    }catch(e){console.warn('Supabase erro:',e); return false;}
+}
+
+var L=['A','B','C','D','E'];
+var cur=0,sc=0,hist=[];
+// hist[i] = {sel: Set of selected indices, confirmed: bool}
+
+function getFams(){
+    var r={};
+    Q.forEach(function(q,i){
+        if(!r[q.f])r[q.f]={t:0,c:0};
+        r[q.f].t++;
+        if(hist[i]&&hist[i].confirmed&&isFullyCorrect(i))r[q.f].c++;
+    });
+    return r;
+}
+
+function isFullyCorrect(i){
+    if(!hist[i]||!hist[i].confirmed)return false;
+    var sel=hist[i].sel;
+    var correct=Q[i].c;
+    if(sel.size!==correct.length)return false;
+    for(var j=0;j<correct.length;j++){if(!sel.has(correct[j]))return false;}
+    return true;
+}
+
+function startQuiz(){
+    document.getElementById('start').style.display='none';
+    document.getElementById('quiz').style.display='block';
+    load();
+}
+
+function load(){
+    var q=Q[cur];
+    document.getElementById('q-count').textContent=(cur+1)+' / '+Q.length;
+    document.getElementById('progress-fill').style.width=((cur/Q.length)*100)+'%';
+    document.getElementById('quote-text').textContent=q.q;
+    document.getElementById('question-label').textContent=q.qt;
+
+    var n=q.c.length;
+    var hint=n===1
+        ? 'Seleciona <em>1 manobra</em> e confirma.'
+        : 'Pode haver mais do que uma. Seleciona todas as que encontrares e confirma.';
+    document.getElementById('multi-hint').innerHTML=hint;
+
+    document.getElementById('back-btn').style.display=cur>0?'block':'none';
+    document.getElementById('next-btn').style.display='none';
+
+    var w=document.getElementById('q-anim-wrap');
+    w.classList.remove('q-anim');void w.offsetWidth;w.classList.add('q-anim');
+
+    var already=hist[cur]&&hist[cur].confirmed;
+    var sel=already?hist[cur].sel:new Set();
+
+    var opts=document.getElementById('options');opts.innerHTML='';
+    q.o.forEach(function(o,i){
+        var b=document.createElement('button');
+        b.className='opt-btn'+(sel.has(i)?' selected':'');
+        b.innerHTML='<span class="opt-check">'+(sel.has(i)?'&#10003;':'')+'</span>'+o;
+        b.dataset.idx=i;
+        if(already){
+            b.disabled=true;
+            b.classList.remove('selected');
+            var isCorrect=q.c.indexOf(i)!==-1;
+            var wasSelected=sel.has(i);
+            if(isCorrect&&wasSelected)b.classList.add('correct');
+            else if(isCorrect&&!wasSelected)b.classList.add('missed');
+            else if(!isCorrect&&wasSelected)b.classList.add('incorrect');
+        } else {
+            b.onclick=function(){toggle(this,i);};
+        }
+        opts.appendChild(b);
+    });
+
+    var confirmBtn=document.getElementById('confirm-btn');
+    if(already){
+        confirmBtn.style.display='none';
+        document.getElementById('next-btn').style.display='block';
+        showFB(q,sel,true);
+    } else {
+        confirmBtn.style.display='block';
+        confirmBtn.disabled=true;
+        document.getElementById('feedback').style.display='none';
+    }
+}
+
+function toggle(btn,idx){
+    var sel=getCurSel();
+    if(sel.has(idx)){
+        sel.delete(idx);
+        btn.classList.remove('selected');
+        btn.querySelector('.opt-check').innerHTML='';
+    } else {
+        sel.add(idx);
+        btn.classList.add('selected');
+        btn.querySelector('.opt-check').innerHTML='&#10003;';
+    }
+    document.getElementById('confirm-btn').disabled=sel.size===0;
+}
+
+function getCurSel(){
+    if(!hist[cur])hist[cur]={sel:new Set(),confirmed:false};
+    return hist[cur].sel;
+}
+
+function confirmarResposta(){
+    var q=Q[cur];
+    var sel=getCurSel();
+    // Check if all correct are selected and no wrong
+    var hasWrong=false;
+    sel.forEach(function(i){if(q.c.indexOf(i)===-1)hasWrong=true;});
+    var missingCorrect=q.c.filter(function(i){return!sel.has(i);});
+
+    // Special case: selected "Não identifico nenhuma manobra de pressão" (index 4)
+    if(sel.has(4)&&sel.size===1&&q.c.indexOf(4)===-1){
+        showWarnNenhuma();
+        return;
+    }
+
+    // If incomplete (no wrong, but missing some correct) — warn, don't lock
+    if(!hasWrong&&missingCorrect.length>0){
+        showWarn();
+        return;
+    }
+
+    // Lock and show result
+    hist[cur].confirmed=true;
+    if(isFullyCorrect(cur))sc++;
+
+    document.querySelectorAll('.opt-btn').forEach(function(b){
+        var i=parseInt(b.dataset.idx);
+        var isCorrect=q.c.indexOf(i)!==-1;
+        var wasSelected=sel.has(i);
+        b.disabled=true;
+        b.classList.remove('selected');
+        b.querySelector('.opt-check').innerHTML='';
+        if(isCorrect&&wasSelected){b.classList.add('correct');b.querySelector('.opt-check').innerHTML='&#10003;';}
+        else if(isCorrect&&!wasSelected){b.classList.add('missed');b.querySelector('.opt-check').innerHTML='!';}
+        else if(!isCorrect&&wasSelected){b.classList.add('incorrect');b.querySelector('.opt-check').innerHTML='&#10007;';}
+    });
+
+    document.getElementById('confirm-btn').style.display='none';
+    document.getElementById('next-btn').style.display='block';
+    showFB(q,sel,false);
+}
+
+function showWarn(){
+    var fb=document.getElementById('feedback');
+    var s=document.getElementById('fb-status');
+    s.textContent='\u26a0\ufe0f Ainda h\u00e1 mais manobras nesta fala \u2014 volta a ver!';
+    s.className='fb-header warn';
+    document.getElementById('fb-text').textContent='Ainda n\u00e3o selecionaste todas as manobras presentes. Continua a procurar.';
+    document.getElementById('fb-shield').textContent='';
+    fb.style.display='block';
+}
+
+function showWarnNenhuma(){
+    var fb=document.getElementById('feedback');
+    var s=document.getElementById('fb-status');
+    s.textContent='⚠️ Atenção — há manobras nesta fala!';
+    s.className='fb-header warn';
+    document.getElementById('fb-text').textContent='Todas as falas deste quiz contêm pelo menos uma manobra de pressão ou manipulação. Volta a ler com atenção e tenta identificar o que está a acontecer.';
+    document.getElementById('fb-shield').textContent='';
+    fb.style.display='block';
+}
+
+function showFB(q,sel,fromHistory){
+    var ok=isFullyCorrect(cur);
+    var hasWrong=false;
+    sel.forEach(function(i){if(q.c.indexOf(i)===-1)hasWrong=true;});
+    var fb=document.getElementById('feedback');
+    var s=document.getElementById('fb-status');
+    if(ok){
+        s.textContent='✅ Radar ativo! Correto!';
+        s.className='fb-header ok';
+    } else if(hasWrong){
+        s.textContent='❌ Distorção no radar. Havia erros.';
+        s.className='fb-header ko';
+    } else {
+        s.textContent='⚠️ Quase! Faltaram algumas manobras.';
+        s.className='fb-header warn';
+    }
+    document.getElementById('fb-text').textContent=q.e;
+    document.getElementById('fb-shield').textContent=q.sh||'';
+    fb.style.display='block';
+    // Scroll suave ate ao feedback
+    setTimeout(function(){
+        fb.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },100);
+}
+
+function nextQuestion(){cur++;cur<Q.length?load():showResults();}
+
+function prevQuestion(){if(cur>0){cur--;load();}}
+
+var enviado=false;
+function respondidas(){var n=0;Q.forEach(function(q,i){var h=hist[i];if(h&&h.confirmed)n++;});return n;}
+function montarRespostas(soRespondidas){
+    var respostas={};
+    Q.forEach(function(q,i){
+        var h=hist[i];
+        if(soRespondidas&&!(h&&h.confirmed))return;
+        var selArray=h&&h.sel?Array.from(h.sel):[];
+        var selLabels=selArray.map(function(idx){return q.o[idx]||'?';});
+        var corretas=q.c.map(function(idx){return q.o[idx]||'?';});
+        respostas[i]={
+            familia:q.f,
+            correto:h&&h.confirmed&&isFullyCorrect(i),
+            opcoes_selecionadas:selLabels,
+            opcoes_corretas:corretas,
+            selecionou_nenhuma:selArray.indexOf(4)!==-1
+        };
+    });
+    return respostas;
+}
+var pendente=null, aEnviar=false;
+function mostrarEnvio(estado){
+    var b=document.getElementById('btn-enviar'), m=document.getElementById('envio-msg');
+    if(!b||!m) return;
+    if(estado==='espera'){ b.style.display='inline-block'; b.disabled=false; b.innerHTML='&#x1F4E4; Enviar dados'; m.style.color='#e0c46c'; m.textContent='Os dados desta sessão ainda não foram enviados.'; }
+    if(estado==='a_enviar'){ b.disabled=true; b.innerHTML='A enviar…'; m.style.color='#cfc6dd'; m.textContent=''; }
+    if(estado==='ok'){ b.disabled=true; b.innerHTML='&#x2714;&#xFE0F; Dados enviados'; m.style.color='#7ddc8a'; m.textContent=MODO_COLETIVO?'✓ Dados enviados para o dashboard. Não é preciso enviar de novo.':'✓ Resultados enviados.'; }
+    if(estado==='erro'){ b.style.display='inline-block'; b.disabled=false; b.innerHTML='&#x1F504; Tentar de novo'; m.style.color='#ff8a8a'; m.textContent='Não foi possível enviar — verifique a internet e tente de novo.'; }
+}
+async function enviarPendente(){
+    if(enviado||aEnviar||!pendente) return;
+    aEnviar=true; mostrarEnvio('a_enviar');
+    var ok=await guardarResultado(alunoNome,alunoTurma,pendente.sc,pendente.total,pendente.respostas,alunoEscola,alunoAgrupamento);
+    aEnviar=false;
+    if(ok){ enviado=true; mostrarEnvio('ok'); } else { mostrarEnvio('erro'); }
+}
+function terminarAntes(){
+    var n=respondidas();
+    if(!n){alert('Ainda não há respostas confirmadas.');return;}
+    if(!confirm(MODO_COLETIVO?('Terminar agora? As '+n+' respostas já confirmadas ficam prontas a enviar — no ecrã seguinte, carregue em «Enviar dados».'):('Terminar agora? As '+n+' respostas já confirmadas são enviadas e o registo fica marcado como incompleto.')))return;
+    showResults(true);
+}
+// Se a janela for fechada a meio, as respostas já confirmadas são enviadas na mesma
+window.addEventListener('pagehide',function(){
+    if(enviado||aEnviar||!alunoTurma)return;
+    if(pendente){ guardarResultado(alunoNome,alunoTurma,pendente.sc,pendente.total,pendente.respostas,alunoEscola,alunoAgrupamento,true); return; }
+    var n=respondidas(); if(!n)return;
+    guardarResultado(alunoNome,alunoTurma,sc,n,montarRespostas(true),alunoEscola,alunoAgrupamento,true);
+});
+function showResults(parcial){
+    document.getElementById('quiz').style.display='none';
+    document.getElementById('results').style.display='block';
+    document.getElementById('score-n').textContent=sc;
+    document.getElementById('score-d').textContent='de '+(parcial?respondidas():Q.length);
+    // Preparar o envio (parcial: só as respostas confirmadas; total = n.º respondidas)
+    pendente={total:parcial?respondidas():Q.length, respostas:montarRespostas(!!parcial), sc:sc};
+    if(MODO_COLETIVO){ mostrarEnvio('espera'); } else { enviarPendente(); }
+    var pct=sc/(parcial?Math.max(respondidas(),1):Q.length),t,d;
+    if(pct===1){t='\ud83d\udc51 Radar de Elite \u2014 '+sc+'/'+sc;d='Perfeito! Identificaste todas as manobras em todas as falas, incluindo as combina\u00e7\u00f5es. O teu radar est\u00e1 totalmente calibrado.';}
+    else if(pct>=.8){t='\ud83d\udce1 Especialista do Radar';d='Muito bem! Identificaste a grande maioria das situa\u00e7\u00f5es. Revisa as que falhaste para afinar o radar.';}
+    else if(pct>=.5){t='\ud83d\udd75\ufe0f Radar em Treino';d='Bom caminho! J\u00e1 identificaste as manobras mais \u00f3bvias, mas as combina\u00e7\u00f5es ainda te escapam. Continua a treinar.';}
+    else{t='\u26a0\ufe0f Radar a Calibrar';d='Estas situa\u00e7\u00f5es s\u00e3o mesmo dif\u00edceis de apanhar \u2014 \u00e9 por isso que treinar o radar \u00e9 t\u00e3o importante. Volta a tentar!';}
+    document.getElementById('rank-title').textContent=t;
+    document.getElementById('rank-desc').textContent=d;
+    var g=document.getElementById('families-grid');g.innerHTML='';
+    var fams=getFams();
+    Object.keys(fams).forEach(function(f){
+        var r=fams[f];var chip=document.createElement('div');
+        chip.className='fam-chip '+(r.c===r.t?'ok':(r.c===0?'ko':''));
+        chip.textContent=f+' '+r.c+'/'+r.t;g.appendChild(chip);
+    });
+}
+
+function confirmarIdentidade(){
+    var a=document.getElementById('inp-agrupamento').value.trim();
+    var e=document.getElementById('inp-escola').value.trim();
+    var t=document.getElementById('inp-turma').value.trim();
+    if(!e||!t){document.getElementById('inp-erro').style.display='block';return;}
+    alunoAgrupamento=a.toUpperCase();
+    alunoEscola=e.toUpperCase();
+    alunoTurma=t.toUpperCase();
+    alunoNome=MODO_COLETIVO?'COLETIVO':'';
+    document.getElementById('identificacao').style.display='none';
+    document.getElementById('start').style.display='block';
+}
+
+function resetQuiz(){
+    enviado=false; pendente=null; aEnviar=false;
+    var _b=document.getElementById('btn-enviar'); if(_b) _b.style.display='none';
+    var _m=document.getElementById('envio-msg'); if(_m) _m.textContent='';
+    cur=0;sc=0;hist=[];
+    document.getElementById('results').style.display='none';
+    document.getElementById('identificacao').style.display='block';
+    document.getElementById('inp-agrupamento').value='';
+    document.getElementById('inp-escola').value='';
+    document.getElementById('inp-turma').value='';
+    var _na=document.getElementById('inp-nalunos'); if(_na) _na.value='';
+    alunoEscola='';alunoTurma='';alunoNome='';
+}
+
+function exportarMeuCSV(){
+    var linhas=[['Escola',alunoEscola],['Identificacao',alunoNome],['Turma',alunoTurma],['','']];
+    linhas.push(['Pergunta','Familia','Correto','Opcoes Selecionadas','Opcoes Corretas','Selecionou Nenhuma']);
+    Q.forEach(function(q,i){
+        var h=hist[i];
+        var ok=h&&h.confirmed&&isFullyCorrect(i)?'Sim':'Nao';
+        var selArray=h&&h.sel?Array.from(h.sel):[];
+        var selLabels=selArray.map(function(idx){return q.o[idx]||'?';}).join(' | ');
+        var corretas=q.c.map(function(idx){return q.o[idx]||'?';}).join(' | ');
+        var nenhuma=selArray.indexOf(4)!==-1?'Sim':'Nao';
+        linhas.push([i+1,q.f,ok,selLabels,corretas,nenhuma]);
+    });
+    linhas.push(['','','','','','']);
+    linhas.push(['Total',sc+'/'+Q.length,'','','','']);
+    var csv=linhas.map(function(l){return l.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+    var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='quiz-radar-'+alunoNome.replace(/ /g,'-')+'.csv';a.click();
+}
+</script>
+
