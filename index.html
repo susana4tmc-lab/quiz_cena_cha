@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root{--bg:#0F1117;--surface:#1A1D27;--surface2:#22263A;--pink:#FF4D6D;--pink-dim:#3D1A24;--cyan:#00E5C3;--cyan-dim:#003D35;--purple:#9B72FF;--text:#F0EEF6;--text-muted:#8A8FA8;--border:#2E3250;--correct:#00E5C3;--correct-bg:#003D35;--wrong:#FF4D6D;--wrong-bg:#3D1A24;--warn:#F59E0B;--warn-bg:#2D1F00}
+        :root{--bg:#0F1117;--surface:#1A1D27;--surface2:#22263A;--pink:#FF4D6D;--pink-dim:#3D1A24;--cyan:#00E5C3;--cyan-dim:#003D35;--purple:#9B72FF;--text:#F0EEF6;--text-muted:#8A8FA8;--border:#2E3250;--correct:#00E5C3;--correct-bg:#003D35;--wrong:#FF4D6D;--wrong-bg:#3D1A24;--warn:#F59E0B;--warn-bg:#2D1F00;--quase:#3B82F6;--quase-bg:#0B1E3F}
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden;position:relative}
         body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(120px);opacity:.18;pointer-events:none;z-index:0}
@@ -52,6 +52,11 @@
         .opt-btn.incorrect .opt-check{background:var(--wrong);border-color:var(--wrong);color:#fff}
         .opt-btn.missed{border-color:var(--warn);background:var(--warn-bg)}
         .opt-btn.missed .opt-check{background:var(--warn);border-color:var(--warn);color:#000}
+        .opt-btn.quase{border-color:var(--quase);background:var(--quase-bg)}
+        .opt-btn.quase .opt-check{background:var(--quase);border-color:var(--quase);color:#fff}
+        .fb-header.quase{color:var(--quase)}
+        .quase-box{display:none;background:var(--quase-bg);border:1.5px solid var(--quase);border-radius:12px;padding:12px 16px;font-size:14px;line-height:1.6;color:#BFDBFE;margin-bottom:14px}
+        .quase-box b{color:var(--quase)}
         /* FEEDBACK */
         .feedback{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:20px;display:none;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
         @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -158,6 +163,7 @@
         </div>
         <div class="feedback" id="feedback">
             <div class="fb-header" id="fb-status"></div>
+            <div class="quase-box" id="fb-quase"></div>
             <div class="fb-text" id="fb-text"></div>
             <div class="shield-box" id="fb-shield"></div>
         </div>
@@ -209,6 +215,7 @@ var Q=[
     o:["Ataque de car\u00e1ter","Lovebombing (bomba de amor) / elogio estratégico","Gaslighting","Invers\u00e3o da culpa","Não identifico nenhuma manobra de pressão"],
     c:[2,3],
     e:"Gaslighting: negar sistematicamente a realidade e a mem\u00f3ria da v\u00edtima (\u2018nunca disse isso\u2019, \u2018mem\u00f3ria p\u00e9ssima\u2019) at\u00e9 ela perder a confian\u00e7a em si mesma e ficar dependente e isolada. Invers\u00e3o da culpa: transferir a responsabilidade total pelo comportamento abusivo para a pr\u00f3pria v\u00edtima (\u2018a culpa \u00e9 tua\u2019), impedindo-a de reconhecer o abuso e pedir ajuda.",
+    y:{0:"<b>\ud83d\udd35 Faz sentido ver aqui um ataque \u00e0 pessoa.</b> Mas para que serve esta frase: para fugir ao que ela disse (ataque de car\u00e1ter), ou para ela duvidar do que lembra (gaslighting)?"},
     sh:"\ud83d\udee1\ufe0f \u201cEu sei o que aconteceu. Est\u00e1s a tentar responsabilizar-me pelo teu comportamento. Vou falar com algu\u00e9m de confian\u00e7a.\u201d"
   },
   {f:"Coa\u00e7\u00e3o / amea\u00e7a / intimida\u00e7\u00e3o",
@@ -240,6 +247,7 @@ var Q=[
     o:["Cria\u00e7\u00e3o de d\u00edvida","Apelo \u00e0 confian\u00e7a","Sobrevaloriza\u00e7\u00e3o do objeto","Invoca\u00e7\u00e3o do sacrif\u00edcio","Não identifico nenhuma manobra de pressão"],
     c:[1,3],
     e:"Invoca\u00e7\u00e3o do sacrif\u00edcio: destacar o esfor\u00e7o e o carinho para criar um sentimento de obriga\u00e7\u00e3o moral (\u2018ele fez tanto por ti\u2019). Apelo \u00e0 confian\u00e7a: usar a confian\u00e7a interpessoal como alavanca de press\u00e3o (\u2018n\u00e3o confias nele?\u2019). As duas usam a rela\u00e7\u00e3o como instrumento.",
+    y:{0:"<b>\ud83d\udd35 Faz sentido sentir aqui uma obriga\u00e7\u00e3o de retribuir.</b> Mas de onde vem essa obriga\u00e7\u00e3o: de uma troca \u2014 eu fiz por ti, agora fazes tu (cria\u00e7\u00e3o de d\u00edvida) \u2014 ou do peso do esfor\u00e7o que ele fez (invoca\u00e7\u00e3o do sacrif\u00edcio)?"},
     sh:"\ud83d\udee1\ufe0f \u201cAgrade\u00e7o o esfor\u00e7o, mas o que fazes pelos outros n\u00e3o deve ser usado para pressionar a fazer algo que n\u00e3o querem.\u201d"},
   {f:"Insist\u00eancia / tempo",
     q:"\u201cBebe! Bebe! Bebe!\u201d \u2014 e depois vira-se para os colegas: \u201cVamos todos dizer ao mesmo tempo para ele beber!\u201d",
@@ -372,6 +380,7 @@ function getFams(){
     return r;
 }
 
+function ehQuase(q,i){return !!(q.y&&q.y[i]);}
 function isFullyCorrect(i){
     if(!hist[i]||!hist[i].confirmed)return false;
     var sel=hist[i].sel;
@@ -422,7 +431,7 @@ function load(){
             var wasSelected=sel.has(i);
             if(isCorrect&&wasSelected)b.classList.add('correct');
             else if(isCorrect&&!wasSelected)b.classList.add('missed');
-            else if(!isCorrect&&wasSelected)b.classList.add('incorrect');
+            else if(!isCorrect&&wasSelected)b.classList.add(ehQuase(q,i)?'quase':'incorrect');
         } else {
             b.onclick=function(){toggle(this,i);};
         }
@@ -493,6 +502,7 @@ function confirmarResposta(){
         b.querySelector('.opt-check').innerHTML='';
         if(isCorrect&&wasSelected){b.classList.add('correct');b.querySelector('.opt-check').innerHTML='&#10003;';}
         else if(isCorrect&&!wasSelected){b.classList.add('missed');b.querySelector('.opt-check').innerHTML='!';}
+        else if(!isCorrect&&wasSelected&&ehQuase(q,i)){b.classList.add('quase');b.querySelector('.opt-check').innerHTML='~';}
         else if(!isCorrect&&wasSelected){b.classList.add('incorrect');b.querySelector('.opt-check').innerHTML='&#10007;';}
     });
 
@@ -523,11 +533,18 @@ function showWarnNenhuma(){
 
 function showFB(q,sel,fromHistory){
     var ok=isFullyCorrect(cur);
-    var hasWrong=false;
-    sel.forEach(function(i){if(q.c.indexOf(i)===-1)hasWrong=true;});
+    var hasWrong=false, quase=[];
+    sel.forEach(function(i){if(q.c.indexOf(i)===-1){if(ehQuase(q,i))quase.push(i);else hasWrong=true;}});
+    var faltam=q.c.some(function(i){return!sel.has(i);});
     var fb=document.getElementById('feedback');
     var s=document.getElementById('fb-status');
-    if(ok){
+    var qb=document.getElementById('fb-quase');
+    qb.innerHTML=quase.map(function(i){return q.y[i];}).join('<br><br>');
+    qb.style.display=quase.length?'block':'none';
+    if(!ok&&quase.length&&!hasWrong&&!faltam){
+        s.textContent='\ud83d\udd35 Para discutir.';
+        s.className='fb-header quase';
+    } else if(ok){
         s.textContent='✅ Radar ativo! Correto!';
         s.className='fb-header ok';
     } else if(hasWrong){
@@ -567,6 +584,8 @@ function montarRespostas(soRespondidas){
             opcoes_corretas:corretas,
             selecionou_nenhuma:selArray.indexOf(4)!==-1
         };
+        var qs=selArray.filter(function(idx){return ehQuase(q,idx)&&q.c.indexOf(idx)===-1;}).map(function(idx){return q.o[idx];});
+        if(qs.length)respostas[i].quase=qs;
     });
     return respostas;
 }
